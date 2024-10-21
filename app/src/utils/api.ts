@@ -14,7 +14,8 @@ export interface Response {
     url: string;
     method: string;
     time_taken: number;
-    size_bytes: number;
+    body_size_bytes: number;
+    headers_size_bytes: number;
 }
 export const sendRequest = async (request: Request) => {
     const response = await invoke<Response>("send_request", {

@@ -2,24 +2,35 @@ import "./App.css";
 import { createMemo, createSignal, Show } from "solid-js";
 import { sendRequest, type Response } from "./utils/api";
 import { friendlySize } from "./utils/http";
-import Body from "./components/Body";
+import Body from "./components/response/Body";
+import Request from "./components/request/Request";
+import { request } from "./utils/state";
 
 function App() {
     const [url, setUrl] = createSignal("");
     const [method, setMethod] = createSignal("GET");
     const [response, setResponse] = createSignal<Response | null>(null);
+    const [error, setError] = createSignal<string | null>(null);
     const [sending, setSending] = createSignal(false);
     const onSubmit = async (e: Event) => {
         e.preventDefault();
-        setSending(true);
-        const response = await sendRequest({
-            method: method(),
-            url: url(),
-            headers: {},
-            body: "",
-        });
-        setSending(false);
-        setResponse(response);
+        try {
+
+            setSending(true);
+            setError(null);
+            console.log(request.params);
+            const response = await sendRequest({
+                method: method(),
+                url: url(),
+                headers: {},
+                body: "",
+            });
+            setSending(false);
+            setResponse(response);
+        } catch (e) {
+            setSending(false);
+            setError(e as any);
+        }
     };
 
     const disabled = createMemo(() => url().length === 0 || sending());
@@ -33,7 +44,7 @@ function App() {
                 <form class="flex bg-base-100 justify-start items-center" onSubmit={onSubmit}>
 
                     <label class="input input-bordered w-full flex items-center gap-2">
-                        <select value={method()} onChange={(e) => setMethod(e.currentTarget.value)} class="select font-semibold select-sm max-w-xs">
+                        <select value={method()} onChange={(e) => setMethod(e.currentTarget.value)} class="select select-sm max-w-xs">
                             <option value="GET">GET</option>
                             <option value="HEAD">HEAD</option>
                             <option value="POST">POST</option>
@@ -48,24 +59,15 @@ function App() {
                 </form>
 
 
-                <div class="flex rounded-md bg-base-100 p-4 flex-1 h-full min-h-0">
-                    <div class="flex flex-col h-full">
-                        <div class="flex gap-2 items-center justify-start">
-                            <button>Params</button>
-                            <button>Headers</button>
-                            <button>Auth</button>
-                            <button>Body</button>
-                        </div>
-                    </div>
+                <div class="flex rounded-md bg-base-100 flex-1 h-full min-h-0">
+                    <Request />
 
-                    <div class="divider divider-horizontal h-full m-0"></div>
-
-                    <div class="flex flex-col flex-1 h-full min-h-0">
-                        <Show when={response()} fallback={<p> Not Sent</p>}>
+                    <div class="flex flex-col flex-1 h-full min-h-0 border-l-[0.5px] border-base-content/20 p-4">
+                        <Show when={response() && !error()}>
                             <div class="flex w-full gap-2 items-center justify-between">
                                 <p>Response: {response()?.status}</p>
                                 <div>
-                                    <p class="text-sm"><span>{friendlySize(response()?.size_bytes!)}</span>, <span>{response()?.time_taken}ms</span></p>
+                                    <p class="text-sm"><span>{friendlySize(response()?.body_size_bytes! + response()?.headers_size_bytes!)}</span>, <span>{response()?.time_taken}ms</span></p>
                                 </div>
                             </div>
                             <div class="divider m-0"></div>
@@ -74,6 +76,13 @@ function App() {
                             <div class="flex-1 overflow-y-auto">
                                 <Body res={response()!} />
                             </div>
+                        </Show>
+                        <Show when={!error() && !response()}>
+                            <div class="w-full h-full flex items-center justify-center"> <p class="text-lg text-base-content/50">Not Sent</p></div>
+                        </Show>
+
+                        <Show when={error()}>
+                            <div class="w-full h-full flex items-center justify-center"> <p class="text-lg text-red-500/50">{error()}</p></div>
                         </Show>
 
                     </div>

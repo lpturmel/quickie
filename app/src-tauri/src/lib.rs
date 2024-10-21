@@ -5,7 +5,7 @@ use hyper::body::Bytes;
 use hyper::{client::conn::http1::Builder, Request};
 use hyper_util::rt::TokioIo;
 use pki_types::ServerName;
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -25,7 +25,8 @@ struct Response {
     method: String,
     // Time taken in milliseconds
     time_taken: u128,
-    size_bytes: u128,
+    body_size_bytes: u128,
+    headers_size_bytes: u128,
 }
 #[tauri::command]
 async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
@@ -40,9 +41,7 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
 
     let address = format!("{}:{}", host, port);
 
-    let stream = TcpStream::connect(address)
-        .await
-        .expect("failed to connect");
+    let stream = TcpStream::connect(address).await.map_err(|_| Error::Dns)?;
 
     let mut req = Builder::new();
     req.preserve_header_case(true).title_case_headers(true);
@@ -113,9 +112,18 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
     }
 
     let mut headers = HashMap::new();
+    let mut headers_size: u128 = 0;
     for (key, value) in resp.headers().iter() {
-        headers.insert(key.to_string(), value.to_str().unwrap().to_string());
+        let name = key.as_str();
+        let value = value.to_str().unwrap();
+        headers.insert(name.to_string(), value.to_string());
+
+        let header_line = format!("{}: {}\r\n", name, value);
+        headers_size += header_line.len() as u128;
     }
+
+    // Add the final CRLF after headers
+    headers_size += 2; // For the final "\r\n"
 
     Ok(Response {
         status: resp.status().as_u16(),
@@ -124,34 +132,36 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
         url: url.to_string(),
         method: method.to_string(),
         time_taken,
-        size_bytes: size as u128,
+        body_size_bytes: size as u128,
+        headers_size_bytes: headers_size,
     })
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 enum Error {
     InvalidMethod,
     InvalidUrl,
-    // Hyper(hyper::Error),
-    // Io(tokio::io::Error),
+    Dns,
 }
 
-// impl From<tokio::io::Error> for Error {
-//     fn from(e: tokio::io::Error) -> Self {
-//         Error::Io(e)
-//     }
-// }
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+impl Serialize for Error {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
     }
 }
 
-// impl From<hyper::Error> for Error {
-//     fn from(e: hyper::Error) -> Self {
-//         Error::Hyper(e)
-//     }
-// }
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::InvalidMethod => write!(f, "Invalid method"),
+            Error::InvalidUrl => write!(f, "Invalid url"),
+            Error::Dns => write!(f, "DNS error, check the url"),
+        }
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
