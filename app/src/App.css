@@ -5,3 +5,13 @@
 html, body {
   height: 100%;
 }
+
+.code-container {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.code-container pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

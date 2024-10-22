@@ -3,6 +3,7 @@ use http::Method;
 use http_body_util::{BodyExt, Empty};
 use hyper::body::Bytes;
 use hyper::{client::conn::http1::Builder, Request};
+use hyper_tls::HttpsConnector;
 use hyper_util::rt::TokioIo;
 use pki_types::ServerName;
 use serde::{Serialize, Serializer};
@@ -38,6 +39,8 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
     let port = url
         .port_u16()
         .unwrap_or(if proto == &Scheme::HTTPS { 443 } else { 80 });
+
+    let https = HttpsConnector::new();
 
     let address = format!("{}:{}", host, port);
 
@@ -112,18 +115,14 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
     }
 
     let mut headers = HashMap::new();
-    let mut headers_size: u128 = 0;
-    for (key, value) in resp.headers().iter() {
+    let mut headers_size_bytes = 0u128;
+    for (key, value) in resp.headers() {
         let name = key.as_str();
-        let value = value.to_str().unwrap();
-        headers.insert(name.to_string(), value.to_string());
-
-        let header_line = format!("{}: {}\r\n", name, value);
-        headers_size += header_line.len() as u128;
+        let value_str = value.to_str().unwrap_or_default();
+        headers.insert(name.to_string(), value_str.to_string());
+        headers_size_bytes += name.len() as u128 + value_str.len() as u128 + 4;
     }
-
-    // Add the final CRLF after headers
-    headers_size += 2; // For the final "\r\n"
+    headers_size_bytes += 2;
 
     Ok(Response {
         status: resp.status().as_u16(),
@@ -133,7 +132,7 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
         method: method.to_string(),
         time_taken,
         body_size_bytes: size as u128,
-        headers_size_bytes: headers_size,
+        headers_size_bytes,
     })
 }
 

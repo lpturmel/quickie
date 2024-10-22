@@ -4,7 +4,6 @@ import { sendRequest, type Response } from "./utils/api";
 import { friendlySize } from "./utils/http";
 import Body from "./components/response/Body";
 import Request from "./components/request/Request";
-import { request } from "./utils/state";
 
 function App() {
     const [url, setUrl] = createSignal("");
@@ -18,7 +17,6 @@ function App() {
 
             setSending(true);
             setError(null);
-            console.log(request.params);
             const response = await sendRequest({
                 method: method(),
                 url: url(),
@@ -73,7 +71,7 @@ function App() {
                             <div class="divider m-0"></div>
 
 
-                            <div class="flex-1 overflow-y-auto">
+                            <div class="flex-1 overflow-auto">
                                 <Body res={response()!} />
                             </div>
                         </Show>

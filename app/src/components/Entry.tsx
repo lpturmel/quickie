@@ -1,4 +1,4 @@
-import { Component, createEffect } from "solid-js";
+import { Component } from "solid-js";
 import { request, setRequest } from "../utils/state";
 
 interface EntryProps {
@@ -17,10 +17,6 @@ const Entry: Component<EntryProps> = (props) => {
         const target = e.currentTarget as HTMLInputElement;
         setRequest("params", props.index, "value", target.value);
     };
-
-    createEffect(() => {
-        console.log(entry);
-    });
 
     return (
         <div class="flex items-center justify-start gap-4 border-b-[0.5px] border-base-content/20 p-2 w-full">
