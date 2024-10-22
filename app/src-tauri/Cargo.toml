@@ -30,5 +30,3 @@ http-body-util = "0.1.2"
 tokio-rustls = "0.26.0"
 webpki-roots = "0.26.6"
 pki-types = { package = "rustls-pki-types", version = "1", features = ["alloc"] }
-hyper-tls = "0.6.0"
-

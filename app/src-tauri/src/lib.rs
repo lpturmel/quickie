@@ -40,8 +40,6 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
         .port_u16()
         .unwrap_or(if proto == &Scheme::HTTPS { 443 } else { 80 });
 
-    let https = HttpsConnector::new();
-
     let address = format!("{}:{}", host, port);
 
     let stream = TcpStream::connect(address).await.map_err(|_| Error::Dns)?;
