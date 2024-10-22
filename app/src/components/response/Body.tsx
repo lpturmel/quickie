@@ -22,13 +22,13 @@ const Body: Component<BodyProps> = (props) => {
         }
     });
 
-    // Data from the app backend is base64 encoded
     const body = createMemo(() => props.res.body);
 
     const imageUrl = createMemo(() => `data:${contentType()};base64,${body()}`);
 
     createEffect(async () => {
         if (lang() == "image") return;
+        // Data from the app backend is base64 encoded
         const html = await codeToHtml(atob(body()), {
             lang: lang(), theme: "everforest-dark", colorReplacements: {
                 "#2d353b": "transparent",
