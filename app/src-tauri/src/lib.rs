@@ -3,7 +3,6 @@ use http::Method;
 use http_body_util::{BodyExt, Empty};
 use hyper::body::Bytes;
 use hyper::{client::conn::http1::Builder, Request};
-use hyper_tls::HttpsConnector;
 use hyper_util::rt::TokioIo;
 use pki_types::ServerName;
 use serde::{Serialize, Serializer};
