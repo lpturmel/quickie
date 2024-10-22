@@ -28,9 +28,6 @@ const Body: Component<BodyProps> = (props) => {
     const imageUrl = createMemo(() => `data:${contentType()};base64,${body()}`);
 
     createEffect(async () => {
-        console.log(contentType());
-        console.log(body().length);
-        console.log(lang());
         if (lang() == "image") return;
         const html = await codeToHtml(atob(body()), {
             lang: lang(), theme: "everforest-dark", colorReplacements: {
