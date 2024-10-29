@@ -1,4 +1,4 @@
-use self::client::{HttpsConnector, MaybeHttp};
+use self::client::HttpsConnector;
 use base64::{engine::general_purpose, Engine as _};
 use http::Method;
 use http_body_util::{BodyExt, Empty};
