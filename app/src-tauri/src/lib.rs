@@ -1,4 +1,4 @@
-use self::client::HttpsConnector;
+use self::client::{HttpsConnector, MaybeHttp};
 use base64::{engine::general_purpose, Engine as _};
 use http::Method;
 use http_body_util::{BodyExt, Empty};
@@ -44,10 +44,10 @@ async fn send_request(method: &str, url: &str) -> Result<Response, Error> {
         .unwrap();
 
     let now = Instant::now();
-    let mut resp = sender
-        .send_request(req)
-        .await
-        .map_err(|_| Error::RequestFailed)?;
+    let mut resp = sender.send_request(req).await.map_err(|e| {
+        println!("Request failed: {:?}", e);
+        Error::RequestFailed
+    })?;
 
     let time_taken = now.elapsed().as_millis();
 
