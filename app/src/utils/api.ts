@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { request as r } from "../utils/state";
 
 export interface Request {
     method: string;
@@ -18,6 +19,17 @@ export interface Response {
     headers_size_bytes: number;
 }
 export const sendRequest = async (request: Request) => {
+    const newUrl = new URL(request.url);
+
+    var mappedParams: Record<string, string> = {};
+    r.params.forEach((param) => {
+        if (!param.enabled) return;
+        if (param.name === "") return;
+        if (param.value === "") return;
+        mappedParams[param.name] = param.value;
+    });
+    newUrl.search = new URLSearchParams(mappedParams).toString();
+    request.url = newUrl.toString();
     const response = await invoke<Response>("send_request", {
         method: request.method,
         url: request.url,
