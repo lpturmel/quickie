@@ -1,10 +1,12 @@
 import { Component, createEffect, createMemo, createSignal, Show } from "solid-js";
 import { Response } from "../../utils/api";
-import { codeToHtml } from "shiki";
+import { hi } from "../../utils/state";
 
 interface BodyProps {
     res: Response;
 }
+
+
 const Body: Component<BodyProps> = (props) => {
     const [hydrated, setHydrated] = createSignal("");
     const contentType = createMemo(() => props.res.headers["content-type"] || "text/plain");
@@ -15,10 +17,15 @@ const Body: Component<BodyProps> = (props) => {
             return "html"
         } else if (contentType().includes("application/xml")) {
             return "xml"
-        } else if (contentType() === "text/plain") {
-            return "plaintext"
-        } else {
+        } else if (contentType().includes("text/css")) {
+            return "css"
+        } else if (contentType().includes("text/javascript")) {
+            return "javascript"
+        }
+        else if (contentType().startsWith("image/")) {
             return "image"
+        } else {
+            return "text"
         }
     });
 
@@ -28,13 +35,12 @@ const Body: Component<BodyProps> = (props) => {
 
     createEffect(async () => {
         if (lang() == "image") return;
-        // Data from the app backend is base64 encoded
-        const html = await codeToHtml(atob(body()), {
+        const html = hi()?.codeToHtml(atob(body()), {
             lang: lang(), theme: "everforest-dark", colorReplacements: {
                 "#2d353b": "transparent",
             }
         });
-        setHydrated(html);
+        if (html) setHydrated(html);
 
     });
 

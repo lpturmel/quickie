@@ -4,6 +4,9 @@ import { sendRequest, type Response } from "./utils/api";
 import { friendlySize } from "./utils/http";
 import Body from "./components/response/Body";
 import Request from "./components/request/Request";
+import { initHighlighter } from "./utils/state";
+
+initHighlighter();
 
 function App() {
     const [url, setUrl] = createSignal("");
